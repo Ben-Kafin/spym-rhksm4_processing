@@ -42,7 +42,7 @@ def dIdV_line(ifile, chunk_index=0, cmap='jet', scalefactor=2.75):
         curve = selected_chunk[:, col_index]  # Extract the column
         curve = curve - np.min(curve)  # Ensure all values are positive
         
-        area = simpson(curve, energy)  # Calculate the area under the curve using Simpson's rule
+        area = simpson(y=curve, x=energy)  # Calculate the area under the curve using Simpson's rule
         if area > 0:
             normalized_curve = curve / area  # Normalize the curve while maintaining shape
             normalized_chunk[:, col_index] = normalized_curve * np.max(curve) / np.max(normalized_curve)  # Rescale back to original range
@@ -96,7 +96,7 @@ def dIdV_map(ifile, cmap='jet', scalefactor=2.75):
         curve = LIAcurrent[:, i]  # Extract the column (LIA values for all energy levels at one position)
         curve = curve - np.min(curve)  # Ensure all values are positive
         
-        area = simpson(curve, energy)  # Calculate the area under the curve using Simpson's rule
+        area = simpson(y=curve, x=energy)  # Calculate the area under the curve using Simpson's rule
         if area > 0:
             normalized_curve = curve / area  # Normalize the curve
             normalized_columns.append(normalized_curve * np.max(curve) / np.max(normalized_curve))  # Rescale back to original range
