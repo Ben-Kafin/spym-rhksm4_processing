@@ -54,10 +54,13 @@ def dIdV_line(ifile, chunk_index=0, cmap='jet', scalefactor=2.75):
 
     # Transpose the normalized and reversed chunk
     normalized_chunk = normalized_chunk.T
+        
+    # Reverse the order of curves energy-wise (columns)
+    normalized_chunk = normalized_chunk[:, ::-1]
 
     # Plot the normalized chunk with the corrected axes
     plt.figure(figsize=(8, 6))
-    plt.imshow(normalized_chunk, extent=[energy[0], energy[-1], pos[0], pos[-1]],  # Correctly flipped position axis
+    plt.imshow(normalized_chunk, extent=[energy[-1], energy[0], pos[0], pos[-1]],  # Correctly flipped position axis
                aspect='auto', cmap=cmap)
     plt.colorbar(label="dIdV signal")
     plt.xlabel("Energy (eV)")
