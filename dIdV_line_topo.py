@@ -341,7 +341,7 @@ class DidVLineAnalyzer:
 # Sample run code:
 if __name__ == '__main__':
     # Replace 'example.sm4' with the correct path.
-    analyzer = DidVLineAnalyzer('C:/Users/Benjamin Kafin/Downloads/NHC-iPr_Au_base8_CT_2025_05_01_18_51_34_112.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=True)
+    analyzer = DidVLineAnalyzer('C:/directory/file.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=True)
     
     # Plot dI/dV line scan with filtering and normalization.
     analyzer.plot_line(hampel_filter_params={'window': 3, 'n_sigma': 2.5},
