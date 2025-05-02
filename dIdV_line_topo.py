@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri May  2 14:01:51 2025
-
 @author: Benjamin Kafin
 """
 
@@ -274,7 +272,6 @@ class DidVLineAnalyzer:
           apply_normalize      : If True, normalize each dI/dV spectrum.
           topo_mode            : 'forward' (use page 2), 'reverse' (use page 3) or 'average' (average pages 2 and 3).
           line_index           : If provided, this row from the topography data is used as the profile.
-                                 (This is analogous to the chunk index in the spectroscopy data.)
         """
         # Process the dI/dV line scan data.
         self.extract_data()
@@ -305,20 +302,23 @@ class DidVLineAnalyzer:
 
         # Extract topography data.
         try:
-            # Now, pass the line_index to extract_topography.
             if line_index is not None:
                 topo_x, topo_profile = self.extract_topography(topo_mode, line_index=line_index)
             else:
-                # If no line index is provided, default to central row.
                 topo_x, topo_y, topo_data = self.extract_topography(topo_mode)
                 topo_profile = topo_data[topo_data.shape[0] // 2, :]
         except Exception as e:
             print("Failed to extract topography:", e)
             return
 
-        # Create a figure with two panels: left for dI/dV and right for the topo profile.
+        # Adjust the topo_x so that it starts at zero.
+        # (It should already be zero if you subtracted topo_x[0], but we'll enforce it.)
+        topo_x = topo_x - np.min(topo_x)
+
+        # Create the figure with two panels.
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6),
                                        gridspec_kw={'width_ratios': [3, 1]})
+        # Plot the dI/dV heatmap.
         im = ax1.imshow(curves, extent=[self.energy[-1], self.energy[0],
                                          self.pos[0], self.pos[-1]],
                         aspect='auto', cmap=self.cmap)
@@ -329,11 +329,22 @@ class DidVLineAnalyzer:
         else:
             ax1.set_title("dI/dV Line Scan")
         plt.colorbar(im, ax=ax1, label="dI/dV signal")
+        
+        # Plot the topography profile.
         ax2.plot(topo_x, topo_profile, 'k-', linewidth=2)
-        ax2.set_xlabel("Distance (Å)")
-        ax2.set_ylabel("Height (Å)")
+        ax2.set_xlabel("Position (Å)")
+        ax2.set_ylabel("Tip Height (Å)")
         ax2.set_title("Topography Profile (" + topo_mode + ")")
-        ax2.set_xlim([np.min(topo_x), np.max(topo_x)])
+        # Force the left x-axis value to be zero and set evenly spaced ticks.
+        max_topo_x = np.max(topo_x)
+        ax2.set_xlim([0, max_topo_x])
+        '''
+        tick_vals = np.linspace(0, max_topo_x, num=5)
+        ax2.set_xticks(tick_vals)
+        # Optionally, format tick labels as needed.
+        ax2.set_xticklabels([f"{tick:.2f}" for tick in tick_vals])
+        '''
+        
         plt.tight_layout()
         plt.show()
 
