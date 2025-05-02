@@ -201,7 +201,7 @@ class DidVLineAnalyzer:
 if __name__ == '__main__':
     # Create an instance of DidVLineAnalyzer.
     # Change "example.sm4" to your actual SM4 file path.
-    analyzer = DidVLineAnalyzer('C:/Users/Benjamin Kafin/Downloads/NHC-iPr_Au_base8_CT_2025_05_01_18_51_34_112.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=False)
+    analyzer = DidVLineAnalyzer('C:/diectory/file.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=False)
     
     # Plot with no filtering or normalization:
     analyzer.plot_line(apply_normalize=True)
