@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Created on Fri May  2 14:01:51 2025
+
 @author: Benjamin Kafin
 """
 
@@ -8,6 +10,9 @@ import matplotlib.pyplot as plt
 from spym.io import rhksm4
 from scipy.signal import savgol_filter
 from scipy.integrate import simpson
+from matplotlib.collections import LineCollection
+import matplotlib.colors as mcolors
+#from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 class DidVLineAnalyzer:
     def __init__(self, ifile, chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=False):
@@ -262,18 +267,27 @@ class DidVLineAnalyzer:
         else:
             return topo_x, topo_y, topo_data
 
+
+
+
     def plot_line_with_topo(self, hampel_filter_params=None, sgolay_filter_params=None,
                             apply_normalize=False, topo_mode='forward', line_index=None):
         """
-        Plot the dI/dV line scan alongside a topography profile.
+        Plot the dI/dV line scan together with the topography profile.
+        
+        The dI/dV image appears in the right subplot (with Energy on the x-axis and Position on the y-axis).
+        The topography is represented in the left, very narrow subplot as a single vertical stripe whose segment
+        colors represent the topography height. The topo colorbar is placed flush to the far left of the entire image.
+        The topo panel has no title, axis labels, or tick marks.
+        
         Parameters:
           hampel_filter_params: dict for the Hampel filter.
           sgolay_filter_params: dict for the Savitzky–Golay filter.
           apply_normalize      : If True, normalize each dI/dV spectrum.
           topo_mode            : 'forward' (use page 2), 'reverse' (use page 3) or 'average' (average pages 2 and 3).
-          line_index           : If provided, this row from the topography data is used as the profile.
+          line_index           : If provided, selects that row from the topography data; otherwise, the middle row is used.
         """
-        # Process the dI/dV line scan data.
+        # --- Process dI/dV Line Scan Data ---
         self.extract_data()
         if self.scan_mode in ['single', 'combined', 'raw']:
             curves = self.chunk.copy()
@@ -299,51 +313,70 @@ class DidVLineAnalyzer:
             curves = curves[:, ::-1]
         else:
             raise ValueError("Unknown scan mode.")
-
-        # Extract topography data.
+        
+        # --- Extract Topography Data ---
         try:
             if line_index is not None:
                 topo_x, topo_profile = self.extract_topography(topo_mode, line_index=line_index)
             else:
                 topo_x, topo_y, topo_data = self.extract_topography(topo_mode)
-                topo_profile = topo_data[topo_data.shape[0] // 2, :]
+                topo_profile = topo_data[topo_data.shape[0] // 2, :]  # default: use the center row
         except Exception as e:
             print("Failed to extract topography:", e)
             return
-
-        # Adjust the topo_x so that it starts at zero.
-        # (It should already be zero if you subtracted topo_x[0], but we'll enforce it.)
+            
+        # Adjust topo_x so that it starts at zero.
         topo_x = topo_x - np.min(topo_x)
-
-        # Create the figure with two panels.
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6),
-                                       gridspec_kw={'width_ratios': [3, 1]})
-        # Plot the dI/dV heatmap.
-        im = ax1.imshow(curves, extent=[self.energy[-1], self.energy[0],
-                                         self.pos[0], self.pos[-1]],
-                        aspect='auto', cmap=self.cmap)
-        ax1.set_xlabel("Energy (eV)")
-        ax1.set_ylabel("Position (Å)")
-        if self.scan_mode == 'combined':
-            ax1.set_title("dI/dV (Combined)")
-        else:
-            ax1.set_title("dI/dV Line Scan")
-        plt.colorbar(im, ax=ax1, label="dI/dV signal")
         
-        # Plot the topography profile.
-        ax2.plot(topo_x, topo_profile, 'k-', linewidth=2)
-        ax2.set_xlabel("Position (Å)")
-        ax2.set_ylabel("Tip Height (Å)")
-        ax2.set_title("Topography Profile (" + topo_mode + ")")
-        # Force the left x-axis value to be zero and set evenly spaced ticks.
-        max_topo_x = np.max(topo_x)
-        ax2.set_xlim([0, max_topo_x])
-        '''
-        tick_vals = np.linspace(0, max_topo_x, num=5)
-        ax2.set_xticks(tick_vals)
-        # Optionally, format tick labels as needed.
-        ax2.set_xticklabels([f"{tick:.2f}" for tick in tick_vals])
-        '''
+        # --- Create the Figure ---
+        # Use a very narrow left panel for the topo stripe.
+        fig, (ax_topo, ax_didv) = plt.subplots(1, 2, #figsize=(12, 6),
+                                                gridspec_kw={'width_ratios': [0.2, 3]},
+                                                sharey=True)
+        # Remove extra space between subplots and at the figure margins.
+        #fig.subplots_adjust( left=0.0, right=1.0,wspace=-0.1)
+        
+        # --- dI/dV Image (Right Subplot) ---
+        im = ax_didv.imshow(curves, 
+                            extent=[self.energy[-1], self.energy[0],
+                                    self.pos[0], self.pos[-1]],
+                            aspect='auto', cmap=self.cmap)
+        ax_didv.set_xlabel("Energy (eV)")
+        ax_didv.set_ylabel("Position (Å)")
+        ax_didv.set_title("dI/dV Line Scan")
+        # Move the dI/dV y-axis tick labels to the right.
+        ax_didv.yaxis.tick_right()
+        ax_didv.yaxis.set_label_position("right")
+        plt.colorbar(im, ax=ax_didv, label="dI/dV signal")
+        
+        # --- Topography as a Vertical Stripe (Left Subplot) ---
+        # Create a vertical stripe with points at x=0 and y given by topo_x.
+        points = np.vstack((np.zeros_like(topo_x), topo_x)).T  # shape: (n,2)
+        segments = np.concatenate([points[:-1, None, :], points[1:, None, :]], axis=1)
+        # Color each segment based on the average height from topo_profile.
+        color_values = (topo_profile[:-1] + topo_profile[1:]) / 2.0
+        norm = mcolors.TwoSlopeNorm(vmin=np.min(topo_profile),
+                                    vcenter=(np.min(topo_profile) + np.max(topo_profile)) / 2,
+                                    vmax=np.max(topo_profile))
+        custom_topo = mcolors.LinearSegmentedColormap.from_list("custom_topo", ["black","firebrick", "yellow"])
+        lc = LineCollection(segments, cmap=custom_topo, norm=norm, linewidth=30)
+        lc.set_array(color_values)
+        ax_topo.add_collection(lc)
+        
+        # Tighten the left axis so that only the stripe is visible.
+        ax_topo.margins(0, 0)
+        ax_topo.set_xlim([-0.01, 0.01])
+        ax_topo.set_xticks([])
+        ax_topo.set_xticklabels([])
+        ax_topo.set_ylim([np.min(topo_x), np.max(topo_x)])
+        ax_topo.set_ylabel("Position (Å)")
+        #ax_topo.spines['top'].set_visible(False)
+        #ax_topo.spines['bottom'].set_visible(False)
+        
+        # --- Place the Topo Colorbar on the Left Side of the Entire Image ---
+        #divider = make_axes_locatable(ax_topo)
+        #cax = divider.append_axes("left", size="15%", pad=0.0)
+        #plt.colorbar(lc, cax=cax, orientation='vertical', label="Height")
         
         plt.tight_layout()
         plt.show()
