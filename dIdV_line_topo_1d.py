@@ -385,7 +385,7 @@ class DidVLineAnalyzer:
 # Sample run code:
 if __name__ == '__main__':
     # Replace 'example.sm4' with the correct path.
-    analyzer = DidVLineAnalyzer('C:/Users/Benjamin Kafin/Downloads/NHC-iPr_Au_base8_CT_2024_07_12_17_01_07_799.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=False)
+    analyzer = DidVLineAnalyzer('C:/dir', chunk_index=0, cmap='jet', scalefactor=2.75, combine_scans=False)
     
     # Plot dI/dV line scan with filtering and normalization.
     '''
@@ -400,4 +400,5 @@ if __name__ == '__main__':
                                   sgolay_filter_params={'window_length': 5, 'polyorder': 3},
                                   apply_normalize=True,
                                   topo_mode='forward',
+
                                   line_index=0)
