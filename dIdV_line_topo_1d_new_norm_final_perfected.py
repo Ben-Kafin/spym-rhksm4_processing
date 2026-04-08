@@ -923,7 +923,7 @@ class DidVLineAnalyzer:
 if __name__ == '__main__':
     # Replace 'example.sm4' with the correct path.
     #analyzer = DidVLineAnalyzer('C:/Users/Benjamin Kafin/Downloads/NHC-iPr_Au_base8_CT_2024_07_12_17_01_07_799.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, scan_mode='single', combine_scans=False)
-    analyzer = DidVLineAnalyzer('C:/Users/Benjamin Kafin/Downloads/NHC-iPr_Au_base4_CT_2023_12_29_10_33_32_074.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, scan_mode='single', combine_scans=False)    
+    analyzer = DidVLineAnalyzer('C:/dir/file.sm4', chunk_index=0, cmap='jet', scalefactor=2.75, scan_mode='single', combine_scans=False)    
     # Static plot (original).
     '''
     analyzer.plot_line_with_topo(hampel_filter_params={'window': 3, 'n_sigma': 2.5},
